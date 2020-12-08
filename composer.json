@@ -22,7 +22,9 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-json": "*",
+        "composer/package-versions-deprecated": "1.11.99.1",
         "doctrine/doctrine-bundle": "^1.6.10|^2.0",
+        "doctrine/doctrine-migrations-bundle": "^3.0",
         "doctrine/orm": "^2.7",
         "jms/serializer-bundle": "^3.7",
         "lcobucci/jwt": "3.3",
@@ -33,6 +35,7 @@
         "symfony/expression-language": "5.1.*",
         "symfony/flex": "^1.10",
         "symfony/framework-bundle": "5.1.*",
+        "symfony/maker-bundle": "^1.25",
         "symfony/monolog-bundle": "^3.6",
         "symfony/security-bundle": "5.1.*",
         "symfony/yaml": "5.1.*",
@@ -40,7 +43,6 @@
     },
     "require-dev": {
         "fzaninotto/faker": "^1.9",
-        "symfony/maker-bundle": "^1.23",
         "symfony/profiler-pack": "^1.0",
         "symfony/test-pack": "^1.0"
     },
