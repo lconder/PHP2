@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\ResultRepository;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation as Serializer;
+use Hateoas\Configuration\Annotation as Hateoas;
 
 /**
  * @ORM\Entity(repositoryClass=ResultRepository::class)
@@ -15,7 +16,15 @@ use JMS\Serializer\Annotation as Serializer;
  *     custom={ "id", "result", "user", "time", "_links" }
  *     )
  *
+ * @Hateoas\Relation(
+ *     name="parent",
+ *     href="expr(constant('\\App\\Controller\\ApiResultsController::RUTA_API'))"
+ * )
  *
+ * @Hateoas\Relation(
+ *     name="self",
+ *     href="expr(constant('\\App\\Controller\\ApiResultsController::RUTA_API') ~ '/' ~ object.getId())"
+ * )
  */
 class Result
 {
@@ -56,6 +65,19 @@ class Result
      * @Serializer\XmlElement(cdata=false)
      */
     private $user;
+
+    /**
+     * Result constructor.
+     * @param int $result
+     * @param $time
+     * @param $user
+     */
+    public function __construct(int $result, $time, $user)
+    {
+        $this->result = $result;
+        $this->time = $time;
+        $this->user = $user;
+    }
 
     public function getId(): ?int
     {
