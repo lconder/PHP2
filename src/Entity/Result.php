@@ -3,12 +3,13 @@
 namespace App\Entity;
 
 use App\Repository\ResultRepository;
+use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation as Serializer;
 use Hateoas\Configuration\Annotation as Hateoas;
 
 /**
- * @ORM\Entity(repositoryClass=ResultRepository::class)
+ * @ORM\Entity(repositoryClass="App\Repository\ResultRepository", repositoryClass=ResultRepository::class)
  *
  * @Serializer\XmlNamespace(uri="http://www.w3.org/2005/Atom", prefix="atom")
  * @Serializer\AccessorOrder(
@@ -72,7 +73,7 @@ class Result
      * @param $time
      * @param $user
      */
-    public function __construct(int $result, $time, $user)
+    public function __construct(int $result = 0, $time, $user)
     {
         $this->result = $result;
         $this->time = $time;
