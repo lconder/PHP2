@@ -35,6 +35,7 @@ class ApiResultsController extends AbstractController
     private const HEADER_CACHE_CONTROL = 'Cache-Control';
     private const HEADER_ETAG = 'ETag';
     private const HEADER_ALLOW = 'Allow';
+    private const ROLE_ADMIN = 'ROLE_ADMIN';
 
     private EntityManagerInterface $entityManager;
 
@@ -88,6 +89,51 @@ class ApiResultsController extends AbstractController
     }
 
     /**
+     * GET Action
+     *
+     * @param Request $request
+     * @param  int $resultId Result id
+     * @return Response
+     * @Route(
+     *     path="/{resultId}.{_format}",
+     *     defaults={ "_format": null },
+     *     requirements={
+     *          "resultId": "\d+",
+     *          "_format": "json|xml"
+     *     },
+     *     methods={ Request::METHOD_GET },
+     *     name="get"
+     * )
+     *
+     * @Security(
+     *     expression="is_granted('IS_AUTHENTICATED_FULLY')",
+     *     statusCode=401,
+     *     message="`Unauthorized`: Invalid credentials."
+     * )
+    */
+    public function getAction(Request $request, int $resultId): Response
+    {
+        $result = $this->entityManager
+            ->getRepository(Result::class)
+            ->find($resultId);
+        $format = Utils::getFormat($request);
+
+        if(empty($result)) {
+            return $this->error404($format);
+        }
+
+        return Utils::apiResponse(
+            Response::HTTP_OK,
+            [ User::USER_ATTR => $result ],
+            $format,
+            [
+                self::HEADER_CACHE_CONTROL => 'must-revalidate',
+                self::HEADER_ETAG => md5(json_encode($result)),
+            ]
+        );
+    }
+
+    /**
      * POST action
      *
      * @param Request $request request
@@ -105,13 +151,14 @@ class ApiResultsController extends AbstractController
     */
     public function postAction(Request $request): Response
     {
-        /* Puede crear un resultado sólo si tiene ROLE_ADMIN
+        // Puede crear un resultado sólo si tiene ROLE_ADMIN
         if (!$this->isGranted(self::ROLE_ADMIN)) {
             throw new HttpException(   // 403
                 Response::HTTP_FORBIDDEN,
                 '`Forbidden`: you don\'t have permission to access'
             );
-        }*/
+        }
+
         $body = $request->getContent();
         $postData = json_decode($body, true);
         $format = Utils::getFormat($request);
@@ -150,7 +197,63 @@ class ApiResultsController extends AbstractController
                 'Location' => self::RUTA_API . '/' . $result->getId(),
             ]
         );
+    }
 
+    /**
+     * @param Request $request
+     * @param int $resultId
+     * @return Response
+     * @Route(
+     *     path="/{resultId}.{_format}",
+     *     defaults={ "_format": null },
+     *     requirements={
+     *          "resultId": "\d+",
+     *         "_format": "json|xml"
+     *     },
+     *     methods={ Request::METHOD_PUT },
+     *     name="put"
+     * )
+     *
+     * @Security(
+     *     expression="is_granted('IS_AUTHENTICATED_FULLY')",
+     *     statusCode=401,
+     *     message="`Unauthorized`: Invalid credentials."
+     * )
+     */
+    public function putAction(Request $request, int $resultId): Response
+    {
+        // Puede crear un resultado sólo si tiene ROLE_ADMIN
+        if (!$this->isGranted(self::ROLE_ADMIN)) {
+            throw new HttpException(   // 403
+                Response::HTTP_FORBIDDEN,
+                '`Forbidden`: you don\'t have permission to access'
+            );
+        }
+
+        $body = $request->getContent();
+        $postData = json_decode($body, true);
+        $format = Utils::getFormat($request);
+
+        $result = $this->entityManager
+            ->getRepository(Result::class)
+            ->find($resultId);
+
+        if (null === $result) {    // 404 - Not Found
+            return $this->error404($format);
+        }
+
+        // result
+        if (isset($postData[Result::RESULT_ATTR])) {
+            $result->setResult($postData[Result::RESULT_ATTR]);
+        }
+
+        $this->entityManager->flush();
+
+        return Utils::apiResponse(
+            209,// 209 - Content Returned
+            [ User::USER_ATTR => $result ],
+            $format
+        );
     }
 
     /**

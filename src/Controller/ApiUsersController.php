@@ -385,7 +385,7 @@ class ApiUsersController extends AbstractController
         $this->entityManager->flush();
 
         return Utils::apiResponse(
-            209,                        // 209 - Content Returned
+            209,// 209 - Content Returned
             [ User::USER_ATTR => $user ],
             $format
         );
