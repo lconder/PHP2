@@ -12,6 +12,7 @@ use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
@@ -124,7 +125,7 @@ class ApiResultsController extends AbstractController
 
         return Utils::apiResponse(
             Response::HTTP_OK,
-            [ User::USER_ATTR => $result ],
+            [ Result::RESULT_ATTR => $result ],
             $format,
             [
                 self::HEADER_CACHE_CONTROL => 'must-revalidate',
@@ -251,9 +252,93 @@ class ApiResultsController extends AbstractController
 
         return Utils::apiResponse(
             209,// 209 - Content Returned
-            [ User::USER_ATTR => $result ],
+            [ Result::RESULT_ATTR => $result ],
             $format
         );
+    }
+
+    /**
+     * Summary: Provides the list of HTTP supported methods
+     * Notes: Return a &#x60;Allow&#x60; header with a list of HTTP supported methods.
+     *
+     * @param  int $resultId Result id
+     * @return Response
+     * @Route(
+     *     path="/{resultId}.{_format}",
+     *     defaults={ "resultId" = 0, "_format": "json" },
+     *     requirements={
+     *          "resultId": "\d+",
+     *         "_format": "json|xml"
+     *     },
+     *     methods={ Request::METHOD_OPTIONS },
+     *     name="options"
+     * )
+     */
+    public function optionsAction(int $resultId): Response
+    {
+        $methods = $resultId
+            ? [ Request::METHOD_GET, Request::METHOD_PUT, Request::METHOD_DELETE ]
+            : [ Request::METHOD_GET, Request::METHOD_POST ];
+        $methods[] = Request::METHOD_OPTIONS;
+
+        return new JsonResponse(
+            null,
+            Response::HTTP_NO_CONTENT,
+            [
+                self::HEADER_ALLOW => implode(', ', $methods),
+                self::HEADER_CACHE_CONTROL => 'public, inmutable'
+            ]
+        );
+    }
+
+    /**
+     * DELETE Action
+     * Summary: Removes the User resource.
+     * Notes: Deletes the user identified by &#x60;userId&#x60;.
+     *
+     * @param   Request $request
+     * @param   int $resultId User id
+     * @return  Response
+     * @Route(
+     *     path="/{resultId}.{_format}",
+     *     defaults={ "_format": null },
+     *     requirements={
+     *          "resultId": "\d+",
+     *         "_format": "json|xml"
+     *     },
+     *     methods={ Request::METHOD_DELETE },
+     *     name="delete"
+     * )
+     *
+     * @Security(
+     *     expression="is_granted('IS_AUTHENTICATED_FULLY')",
+     *     statusCode=401,
+     *     message="`Unauthorized`: Invalid credentials."
+     * )
+     */
+    public function deleteAction(Request $request, int $resultId): Response
+    {
+        // Puede crear un usuario sólo si tiene ROLE_ADMIN
+        if (!$this->isGranted(self::ROLE_ADMIN)) {
+            throw new HttpException(   // 403
+                Response::HTTP_FORBIDDEN,
+                '`Forbidden`: you don\'t have permission to access'
+            );
+        }
+        $format = Utils::getFormat($request);
+
+        $result = $this->entityManager
+            ->getRepository(Result::class)
+            ->find($resultId);
+
+        if (null === $result) {   // 404 - Not Found
+            return $this->error404($format);
+        }
+
+        $this->entityManager->remove($result);
+        $this->entityManager->flush();
+
+        return Utils::apiResponse(Response::HTTP_NO_CONTENT);
     }
 
     /**
