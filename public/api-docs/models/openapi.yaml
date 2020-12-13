@@ -28,6 +28,8 @@ tags:
     description: 'User login'
   - name: Users
     description: 'User management'
+  - name: Results
+    description: 'Results management'
 paths:
   /login_check:
     post:
@@ -210,7 +212,154 @@ paths:
           headers:
             Allow:
               $ref: '#/components/headers/Allow'
-
+  /results:
+    get:
+      tags: [ Results ]
+      summary: Retrieves the collection of Result resources.
+      description: 'Returns all results from the system that the user has access to.'
+      operationId: api_results_cget
+      security:
+        - MiWApiSecurity: []
+      responses:
+        '200':
+          description: 'Array of results'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users: { description: 'Results array', type: array, items: { $ref: '#/components/schemas/Result' } }
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized_Response'
+        '403':
+          $ref: '#/components/responses/403_Forbidden_Response'
+        '404':
+          $ref: '#/components/responses/404_Resource_Not_Found_Response'
+    post:
+      tags: [ Results ]
+      summary: Creates a Result resource.
+      description: 'Creates a new result'
+      operationId: api_results_post
+      security:
+        - MiWApiSecurity: []
+      requestBody:
+        $ref: '#/components/requestBodies/ResultRequestBody'
+      responses:
+        '201':
+          description: '`Created`: result created'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+          headers:
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/400_BadRequest_Response'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized_Response'
+        '403':
+          $ref: '#/components/responses/403_Forbidden_Response'
+        '422':
+          $ref: '#/components/responses/422_UnprocessableEntity_Response'
+    options:
+      tags: [ Results ]
+      summary: Provides the list of HTTP supported methods.
+      description: 'Return a `Allow` header with a comma separated list of HTTP supported methods.'
+      operationId: api_results_coptions
+      responses:
+        '204':
+          description: '`Allow` header &lt;Response body is empty&gt;'
+          headers:
+            Allow:
+              $ref: '#/components/headers/Allow'
+  '/results/{resultId}':
+    get:
+      tags: [ Results ]
+      summary: Retrieves a Result resource based on a single ID.
+      description: 'Returns the result identified by `resultId`.'
+      operationId: api_results_get
+      security:
+        - MiWApiSecurity: [ ]
+      parameters:
+        - $ref: '#/components/parameters/resultId'
+      responses:
+        '200':
+          description: Result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized_Response'
+        '403':
+          $ref: '#/components/responses/403_Forbidden_Response'
+        '404':
+          $ref: '#/components/responses/404_Resource_Not_Found_Response'
+    put:
+      tags:
+        - Results
+      summary: Updates the Result resource.
+      description: 'Updates the result identified by `resultId`.'
+      operationId: api_results_put
+      security:
+        - MiWApiSecurity: [ ]
+      parameters:
+        - $ref: '#/components/parameters/resultId'
+      requestBody:
+        $ref: '#/components/requestBodies/ResultRequestBody'
+      responses:
+        '209':
+          description: '`Content Returned`: result previously existed and is now updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+        '400':
+          $ref: '#/components/responses/400_BadRequest_Response'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized_Response'
+        '403':
+          $ref: '#/components/responses/403_Forbidden_Response'
+        '404':
+          $ref: '#/components/responses/404_Resource_Not_Found_Response'
+    delete:
+      tags: [ Results ]
+      summary: Removes the Result resource.
+      description: 'Deletes the result identified by `resultId`.'
+      operationId: api_results_delete
+      security:
+        - MiWApiSecurity: [ ]
+      parameters:
+        - $ref: '#/components/parameters/resultId'
+      responses:
+        '204':
+          description: 'User deleted &lt;Response body is empty&gt;'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized_Response'
+        '403':
+          $ref: '#/components/responses/403_Forbidden_Response'
+        '404':
+          $ref: '#/components/responses/404_Resource_Not_Found_Response'
+    options:
+      tags: [ Results ]
+      summary: Provides the list of HTTP supported methods.
+      description: 'Return a `Allow` header with a comma separated list of HTTP supported methods.'
+      operationId: api_results_options_id
+      parameters:
+        - $ref: '#/components/parameters/resultId'
+      responses:
+        '204':
+          description: '`Allow` header &lt;Response body is empty&gt;'
+          headers:
+            Allow:
+              $ref: '#/components/headers/Allow'
 components:
   headers:
     ETag:
@@ -224,6 +373,46 @@ components:
       schema: { type: string }
 
   schemas:
+    Result:
+      type: object
+      properties:
+        id:
+          description: 'Result ID'
+          type: integer
+          format: int64
+        result:
+          description: 'Result Points'
+          type: integer
+          format: int64
+        user_id:
+          description: 'User that belongs the result'
+          type: integer
+          format: int64
+        time:
+          description: 'Result Time'
+          type: string
+          format: datetime
+        _links:
+          description: link relations
+          type: object
+          properties:
+            parent:
+              type: object
+              properties: {"href": { "type": "string", "format": "url" }}
+            self:
+              type: object
+              properties: {"href": { "type": "string", "format": "url" }}
+      example:
+        result:
+          id: 1
+          result: 100
+          user_id: 1508
+          time: "2020-12-08T11:48:44+00:00"
+          _links:
+            parent:
+              href: /api/v1/results
+            self:
+              href: /api/v1/results/1
     User:
       type: object
       properties:
@@ -346,6 +535,22 @@ components:
               email: User_email@example.com
               password: User_password
               roles: [ 'ROLE_USER', 'ROLE_ADMIN' ]
+    ResultRequestBody:
+      description: '`Result` data'
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                description: 'Result points'
+                type: integer
+                format: int64
+              time:
+                description: 'Result time'
+                type: string
+                format: date-time
     LoginRequestBody:
       description: Registered user **e-mail** and **password**
       required: true
@@ -382,7 +587,12 @@ components:
       description: 'ID of user'
       required: true
       schema: {"type": "integer", pattern: '^\d+$'}
-
+    resultId:
+      name: resultId
+      in: path
+      description: 'ID of result'
+      required: true
+      schema: {"type": "integer", pattern: '^\d+$'}
   examples:
     response-400:
       value:
