@@ -60,29 +60,28 @@ class ApiUsersControllerTest extends BaseTestCase
      *
      * @return void
      */
-//    public function testCGetAction404(): void
-//    {
-//        $headers = [];
-//        self::$client->request(
-//            Request::METHOD_GET,
-//            self::RUTA_API,
-//            [],
-//            [],
-//            $headers
-//        );
-//        $response = self::$client->getResponse();
-//
-//        self::assertEquals(
-//            Response::HTTP_NOT_FOUND,
-//            $response->getStatusCode()
-//        );
-//        $r_body = (string) $response->getContent();
-//        self::assertContains(Message::CODE_ATTR, $r_body);
-//        self::assertContains(Message::MESSAGE_ATTR, $r_body);
-//        $r_data = json_decode($r_body, true);
-//        self::assertEquals(Response::HTTP_NOT_FOUND, $r_data[Message::MESSAGE_ATTR][Message::CODE_ATTR]);
-//        self::assertEquals(Response::$statusTexts[404], $r_data[Message::MESSAGE_ATTR][Message::MESSAGE_ATTR]);
-//    }
+    /*public function testCGetAction404(): void
+    {
+        $headers = $this->getTokenHeaders();
+        self::$client->request(
+            Request::METHOD_GET,
+            self::RUTA_API,
+            [],
+            [],
+            $headers
+        );
+        $response = self::$client->getResponse();
+        self::assertEquals(
+            Response::HTTP_NOT_FOUND,
+            $response->getStatusCode()
+        );
+        $r_body = (string) $response->getContent();
+        self::assertContains(Message::CODE_ATTR, $r_body);
+        self::assertContains(Message::MESSAGE_ATTR, $r_body);
+        $r_data = json_decode($r_body, true);
+        self::assertEquals(Response::HTTP_NOT_FOUND, $r_data[Message::MESSAGE_ATTR][Message::CODE_ATTR]);
+        self::assertEquals(Response::$statusTexts[404], $r_data[Message::MESSAGE_ATTR][Message::MESSAGE_ATTR]);
+    } */
 
     /**
      * Test POST /users 201 Created
@@ -144,7 +143,7 @@ class ApiUsersControllerTest extends BaseTestCase
     }
 
     /**
-     * Test GET /users 200 Ok (XML)
+     * Test GET /users/{userId} 200 Ok (XML)
      *
      * @param   array $user user returned by testPostUserAction201()
      * @return  void

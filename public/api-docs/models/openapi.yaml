@@ -276,6 +276,58 @@ paths:
           headers:
             Allow:
               $ref: '#/components/headers/Allow'
+  '/results/{userId}/users':
+    put:
+      tags: [ Results ]
+      summary: Clone results into another user
+      description: 'Clone results into another user'
+      operationId: api_clone_results
+      security:
+        - MiWApiSecurity: [ ]
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      requestBody:
+        $ref: '#/components/requestBodies/CloneRequestBody'
+      responses:
+        '200':
+          description: 'Results cloned'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+        '400':
+          $ref: '#/components/responses/400_BadRequest_Response'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized_Response'
+        '403':
+          $ref: '#/components/responses/403_Forbidden_Response'
+        '404':
+          $ref: '#/components/responses/404_Resource_Not_Found_Response'
+    get:
+      tags: [ Results ]
+      summary: Retrieves all results for one user
+      description: 'Retrieves all results for one user'
+      operationId: api_results_get_by_user
+      security:
+        - MiWApiSecurity: [ ]
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: Result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized_Response'
+        '403':
+          $ref: '#/components/responses/403_Forbidden_Response'
+        '404':
+          $ref: '#/components/responses/404_Resource_Not_Found_Response'
   '/results/{resultId}':
     get:
       tags: [ Results ]
@@ -535,6 +587,18 @@ components:
               email: User_email@example.com
               password: User_password
               roles: [ 'ROLE_USER', 'ROLE_ADMIN' ]
+    CloneRequestBody:
+      description: 'data for Clone'
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              parent:
+                description: 'user from which results are cloned'
+                type: integer
+                format: int64
     ResultRequestBody:
       description: '`Result` data'
       required: true

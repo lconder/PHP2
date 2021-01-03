@@ -90,6 +90,136 @@ class ApiResultsController extends AbstractController
     }
 
     /**
+     * CGET Action
+     *
+     * @param Request $request
+     * @param int $userId
+     * @return Response
+     * @Route(
+     *     path="/{userId}/users.{_format}",
+     *     defaults={ "_format": null },
+     *     requirements={
+     *          "userId": "\d+",
+     *          "_format": "json|xml"
+     *     },
+     *     methods={ Request::METHOD_GET },
+     *     name="getByUser"
+     * )
+     *
+     * @Security(
+     *     expression="is_granted('IS_AUTHENTICATED_FULLY')",
+     *     statusCode=401,
+     *     message="`Unauthorized`: Invalid credentials."
+     * )
+     *
+     */
+    public function getActionByUser(Request $request, int $userId): Response
+    {
+        $results = $this->entityManager
+            ->getRepository(Result::class)
+            ->findBy(['user' => $userId], []);
+        $format = Utils::getFormat($request);
+
+        if(empty($results)) {
+            return $this->error404($format);
+        }
+
+        return Utils::apiResponse(
+            Response::HTTP_OK,
+            ['results' => array_map(fn ($r) => ['result' => $r], $results)],
+            $format,
+            [
+                self::HEADER_CACHE_CONTROL => 'must-revalidate',
+                self::HEADER_ETAG => md5(json_encode($results)),
+            ]
+        );
+    }
+
+    /**
+     * @param Request $request
+     * @param int $userId
+     * @return Response
+     * @Route(
+     *      path="/{userId}/users",
+     *      defaults={ "_format": "json", "sort": "id" },
+     *      requirements={
+     *         "sort": "id|result|user|time",
+     *         "_format": "json|xml"
+     *      },
+     *      methods={ Request::METHOD_PUT },
+     *      name="clone"
+     * )
+     *
+     * @Security(
+     *     expression="is_granted('IS_AUTHENTICATED_FULLY')",
+     *     statusCode=401,
+     *     message="`Unauthorized`: Invalid credentials."
+     * )
+     */
+    public function cloneResults(Request $request, int $userId): Response
+    {
+        // Puede clonar resultados sólo si tiene ROLE_ADMIN
+        if (!$this->isGranted(self::ROLE_ADMIN)) {
+            throw new HttpException(   // 403
+                Response::HTTP_FORBIDDEN,
+                '`Forbidden`: you don\'t have permission to access'
+            );
+        }
+
+        $body = $request->getContent();
+        $postData = json_decode($body, true);
+        $format = Utils::getFormat($request);
+
+        if (!isset($postData['parent'])) {
+            // 422 - Unprocessable Entity -> Faltan datos
+            $message = new Message(Response::HTTP_UNPROCESSABLE_ENTITY, Response::$statusTexts[422]);
+            return Utils::apiResponse(
+                $message->getCode(),
+                $message,
+                $format
+            );
+        }
+
+        $userParent = $postData['parent'];
+        $user = $this->entityManager
+            ->getRepository(User::class)
+            ->findOneBy([ 'id' => $userId ]);
+
+        // Obtener los resultados del usuario padre
+        $results = $this->entityManager
+            ->getRepository(Result::class)
+            ->findBy(['user' => $userParent], []);
+        error_log(print_r($results, true));
+        // Insertar esos resultados en el usuario actual
+        foreach ($results as $result) {
+            $result = new Result(
+              $result->getResult(),
+              $result->getTime(),
+                $user
+            );
+            $this->entityManager->persist($result);
+            $this->entityManager->flush();
+        }
+
+        // Obtener los resultados del usuario actual
+        $results = $this->entityManager
+            ->getRepository(Result::class)
+            ->findBy(['user' => $userId], []);
+
+        return Utils::apiResponse(
+            Response::HTTP_OK,
+            ['results' => array_map(fn ($r) => ['result' => $r], $results)],
+            $format,
+            [
+                self::HEADER_CACHE_CONTROL => 'must-revalidate',
+                self::HEADER_ETAG => md5(json_encode($results)),
+            ]
+        );
+
+
+    }
+
+    /**
      * GET Action
      *
      * @param Request $request
